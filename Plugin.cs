@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Exiled.API.Features;
+using Exiled.Events.EventArgs.Player;
+using UnityEngine;
 
 namespace PrImage
 {

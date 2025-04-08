@@ -27,7 +27,7 @@ namespace PrImage.API
             Texture2D original = new Texture2D(2, 2);
             if (!original.LoadImage(imageData))
             {
-                Log.Debug("Image couldnt be loaded.");
+                Log.Debug("Image couldn't be loaded.");
                 yield break;
             }
 
@@ -81,31 +81,61 @@ namespace PrImage.API
             }
 
             Vector3 offset = new Vector3((targetWidth * scale) / 2f, (targetHeight * scale) / 2f, 0);
+            bool[,] used = new bool[targetWidth, targetHeight];
 
-            for (int x = 0; x < targetWidth; x++)
+            for (int y = 0; y < targetHeight; y++)
             {
-                for (int y = 0; y < targetHeight; y++)
+                for (int x = 0; x < targetWidth; x++)
                 {
-                    Color pixelColor = scaled.GetPixel(x, y);
-                    if (pixelColor.a < 0.1f)
+                    if (used[x, y])
                         continue;
 
-                    Vector3 localOffset = new Vector3(x * scale, y * scale, 0) - offset;
+                    Color startColor = scaled.GetPixel(x, y);
+                    if (startColor.a < 0.1f)
+                        continue;
+
+                    int width = 1;
+                    int height = 1;
+
+                    // Check horizontal expansion
+                    while (x + width < targetWidth && !used[x + width, y] && scaled.GetPixel(x + width, y) == startColor)
+                        width++;
+
+                    // Check vertical expansion
+                    bool canExpand = true;
+                    while (y + height < targetHeight && canExpand)
+                    {
+                        for (int k = 0; k < width; k++)
+                        {
+                            if (used[x + k, y + height] || scaled.GetPixel(x + k, y + height) != startColor)
+                            {
+                                canExpand = false;
+                                break;
+                            }
+                        }
+                        if (canExpand) height++;
+                    }
+
+                    // Mark pixels as used
+                    for (int dx = 0; dx < width; dx++)
+                        for (int dy = 0; dy < height; dy++)
+                            used[x + dx, y + dy] = true;
+
+                    // Compute position and size
+                    Vector3 localOffset = new Vector3((x + width / 2f) * scale, (y + height / 2f) * scale, 0) - offset;
                     Vector3 worldPos = forwardOrigin + rotation * localOffset;
 
                     Primitive quad = Primitive.Create(PrimitiveType.Quad);
                     quad.Position = worldPos;
-                    quad.Scale = new Vector3(scale, scale, scale * 0.01f);
-                    quad.Color = pixelColor;
+                    quad.Scale = new Vector3(scale * width, scale * height, scale * 0.01f);
+                    quad.Color = startColor;
 
                     Quaternion fixedRotation = Quaternion.Euler(0f, rotation.eulerAngles.y, 0f);
                     quad.Rotation = fixedRotation;
                     quad.Flags = AdminToys.PrimitiveFlags.Visible;
 
-                    if (duration  > 0)
-                    {
+                    if (duration > 0)
                         Timing.RunCoroutine(DestroyAfterDelay(quad, duration));
-                    }
                 }
 
                 yield return Timing.WaitForOneFrame;
