@@ -14,7 +14,7 @@ namespace PrImage
         public static Plugin Instance;
         public override string Name => "PrImage";
         public override string Author => "Lilin";
-        public override Version Version => new Version(1, 0, 0);
+        public override Version Version => new Version(0, 3, 0);
         public override void OnEnabled()
         {
             Instance = this;

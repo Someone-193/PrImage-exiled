@@ -39,7 +39,12 @@ namespace PrImage.API
                 {
                     float u = x / (float)targetWidth;
                     float v = y / (float)targetHeight;
+
                     Color color = original.GetPixelBilinear(u, v);
+
+                    if (Plugin.Instance.Config.useColorQuantization)
+                        color = QuantizeColor(color);
+
                     scaled.SetPixel(x, y, color);
                 }
             }
@@ -55,7 +60,6 @@ namespace PrImage.API
             if (target is Exiled.API.Features.Player player)
             {
                 forwardOrigin = player.CameraTransform.position + player.CameraTransform.forward * distance;
-
                 Vector3 directionToPlayer = forwardOrigin - player.CameraTransform.position;
                 directionToPlayer.y = 0;
                 rotation = Quaternion.LookRotation(directionToPlayer);
@@ -83,6 +87,8 @@ namespace PrImage.API
             Vector3 offset = new Vector3((targetWidth * scale) / 2f, (targetHeight * scale) / 2f, 0);
             bool[,] used = new bool[targetWidth, targetHeight];
 
+            int primitivesCreated = 0; // <== Zähler hinzufügen
+
             for (int y = 0; y < targetHeight; y++)
             {
                 for (int x = 0; x < targetWidth; x++)
@@ -97,11 +103,9 @@ namespace PrImage.API
                     int width = 1;
                     int height = 1;
 
-                    // Check horizontal expansion
                     while (x + width < targetWidth && !used[x + width, y] && scaled.GetPixel(x + width, y) == startColor)
                         width++;
 
-                    // Check vertical expansion
                     bool canExpand = true;
                     while (y + height < targetHeight && canExpand)
                     {
@@ -116,12 +120,10 @@ namespace PrImage.API
                         if (canExpand) height++;
                     }
 
-                    // Mark pixels as used
                     for (int dx = 0; dx < width; dx++)
                         for (int dy = 0; dy < height; dy++)
                             used[x + dx, y + dy] = true;
 
-                    // Compute position and size
                     Vector3 localOffset = new Vector3((x + width / 2f) * scale, (y + height / 2f) * scale, 0) - offset;
                     Vector3 worldPos = forwardOrigin + rotation * localOffset;
 
@@ -136,10 +138,23 @@ namespace PrImage.API
 
                     if (duration > 0)
                         Timing.RunCoroutine(DestroyAfterDelay(quad, duration));
+
+                    primitivesCreated++; // <== Zähler erhöhen
                 }
 
                 yield return Timing.WaitForOneFrame;
             }
+
+            Log.Debug($"Total primitives created: {primitivesCreated}"); // <== Ausgabe am Ende
+        }
+
+        private static Color QuantizeColor(Color c, int quantizeSteps = 6)
+        {
+            float step = 1f / (quantizeSteps - 1);
+            float r = Mathf.Round(c.r / step) * step;
+            float g = Mathf.Round(c.g / step) * step;
+            float b = Mathf.Round(c.b / step) * step;
+            return new Color(r, g, b, c.a);
         }
 
         private static IEnumerator<float> DestroyAfterDelay(Primitive primitive, float delay)
