@@ -4,9 +4,7 @@ using Exiled.API.Features;
 using Exiled.API.Features.Toys;
 using MEC;
 using UnityEngine;
-using UnityEngine.Rendering;
-
-namespace PrImage.API
+namespace PrImage
 {
     public static class ImageRendererAPI
     {
@@ -17,9 +15,10 @@ namespace PrImage.API
 
         private static IEnumerator<float> RenderImageCoroutine(object target, string filePath, float maxWidth, float maxHeight, float distance, float duration, int targetWidth, int targetHeight)
         {
+            filePath = Paths.Exiled + filePath;
             if (!File.Exists(filePath))
             {
-                Log.Debug($"No image was found under: {filePath}");
+                Log.Warn($"No image was found under: {filePath}");
                 yield break;
             }
 
@@ -27,7 +26,7 @@ namespace PrImage.API
             Texture2D original = new Texture2D(2, 2);
             if (!original.LoadImage(imageData))
             {
-                Log.Debug("Image couldn't be loaded.");
+                Log.Warn("Image couldn't be loaded.");
                 yield break;
             }
 

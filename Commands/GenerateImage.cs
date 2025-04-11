@@ -1,19 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using CommandSystem;
 using Exiled.API.Features;
-using PrImage.API;
-
-namespace PrImage
+namespace PrImage.Commands
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     public class GenerateImageCommand : ICommand
     {
-        public string Command => "generateimage";
-        public string[] Aliases => new string[] { "gri" };
+        public string Command => "GenerateImage";
+        public string[] Aliases => ["gri"];
         public string Description => "Generates primitives using the given image file.";
         
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
@@ -25,10 +19,10 @@ namespace PrImage
             float duration = 30f;
             int targetWidth = 32;
             int targetHeight = 32;
-
+            string imagePath = "";
             if (arguments.Count > 0)
             {
-                string imagePath = arguments.At(0);
+                imagePath = arguments.At(0);
 
                 if (arguments.Count > 1)
                 {
@@ -44,7 +38,6 @@ namespace PrImage
                     if (arguments.Count > 5)
                         int.TryParse(arguments.At(5), out targetHeight);
                 }
-
                 ImageRendererAPI.RenderImage(player, imagePath, maxWidth, maxHeight, 2f, duration, targetWidth, targetHeight);
             }
             else
@@ -53,7 +46,7 @@ namespace PrImage
                 return false;
             }
 
-            response = "Command was successfully executed.";
+            response = $"Tried to load image at path {Paths.Exiled + imagePath}";
             return true;
         }
     }
